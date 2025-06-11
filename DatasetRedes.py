@@ -139,7 +139,7 @@ def main():
             if not df.empty:
                 df = geolocalizar_ips(df)
                 todas_las_conexiones = pd.concat([todas_las_conexiones, df], ignore_index=True)
-            time.sleep(5)  # puedes ajustar este delay si gustas
+            time.sleep(5)
     except KeyboardInterrupt:
         print("\n🚨 Ctrl + C detectado, terminando captura...")
 
@@ -148,10 +148,11 @@ def main():
         return
 
     file_path = "conexiones_monitorizadas.csv"
+    print("El CSV Se Encuentra En:", file_path)
     todas_las_conexiones.to_csv(file_path, index=False)
     print(f"✅ Dataset final guardado como '{file_path}'")
 
-    # 🧠 Mostrar primero estadísticas y correlaciones, luego abrir el archivo
+    # Mostrar primero estadísticas y correlaciones, luego abrir el archivo
     mostrar_estadisticas(todas_las_conexiones)
     mostrar_correlacion(todas_las_conexiones)
     abrir_csv(file_path)
