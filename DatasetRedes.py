@@ -130,7 +130,7 @@ def mostrar_estadisticas(df):
 
     root = tk.Tk()
     root.withdraw()
-    messagebox.showinfo("🐾 Estadísticas Básicas", texto)
+    messagebox.showinfo("Estadísticas Básicas", texto)
     root.destroy()
 
 def mostrar_correlacion(df):
@@ -154,7 +154,7 @@ def abrir_csv(path):
 def main():
     todas_las_conexiones = pd.DataFrame()
 
-    print("🐱 El monitoreo ha comenzado, presiona Ctrl + C para detenerlo... UwU")
+    print("El monitoreo ha comenzado, presiona Ctrl + C para detenerlo...")
     try:
         while True:
             lines = get_netstat_output()
@@ -167,7 +167,7 @@ def main():
         print("\n🚨 Ctrl + C detectado, terminando captura...")
 
     if todas_las_conexiones.empty:
-        print("😿 No se recolectó ninguna conexión activa.")
+        print("No se recolectó ninguna conexión activa.")
         return
 
     file_path = "conexiones_monitorizadas.csv"
