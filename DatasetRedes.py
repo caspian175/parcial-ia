@@ -1,6 +1,8 @@
 # Dependencias Necesarias:
 # pip install pandas seaborn matplotlib requests psutil
 
+# Se Requiere pip, Y Ejecutar El Comando Arriba Para La Ejecucion De Este Codigo.
+
 # Ernesto Morán (4-828-1810)
 # Aurelio Parra (8-1024-554)
 
