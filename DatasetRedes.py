@@ -15,29 +15,6 @@ import requests
 import psutil
 import re
 import time
-
-import subprocess
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-import requests
-import psutil
-import re
-import time
-import os
-import tkinter as tk
-from tkinter import messagebox
-
-import subprocess
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-import requests
-import psutil
-import re
-import time
 import os
 import tkinter as tk
 from tkinter import messagebox
@@ -130,7 +107,7 @@ def mostrar_estadisticas(df):
 
     root = tk.Tk()
     root.withdraw()
-    messagebox.showinfo("Estadísticas Básicas", texto)
+    messagebox.showinfo("🐾 Estadísticas Básicas", texto)
     root.destroy()
 
 def mostrar_correlacion(df):
@@ -162,7 +139,7 @@ def main():
             if not df.empty:
                 df = geolocalizar_ips(df)
                 todas_las_conexiones = pd.concat([todas_las_conexiones, df], ignore_index=True)
-            time.sleep(5)
+            time.sleep(5)  # puedes ajustar este delay si gustas
     except KeyboardInterrupt:
         print("\n🚨 Ctrl + C detectado, terminando captura...")
 
@@ -174,8 +151,10 @@ def main():
     todas_las_conexiones.to_csv(file_path, index=False)
     print(f"✅ Dataset final guardado como '{file_path}'")
 
-    abrir_csv(file_path)
+    # 🧠 Mostrar primero estadísticas y correlaciones, luego abrir el archivo
     mostrar_estadisticas(todas_las_conexiones)
     mostrar_correlacion(todas_las_conexiones)
+    abrir_csv(file_path)
 
+# ========================
 main()
