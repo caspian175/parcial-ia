@@ -162,7 +162,7 @@ def main():
             if not df.empty:
                 df = geolocalizar_ips(df)
                 todas_las_conexiones = pd.concat([todas_las_conexiones, df], ignore_index=True)
-            time.sleep(5)  # puedes ajustar esto si quieres
+            time.sleep(5)
     except KeyboardInterrupt:
         print("\n🚨 Ctrl + C detectado, terminando captura...")
 
