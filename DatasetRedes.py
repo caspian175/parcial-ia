@@ -16,6 +16,19 @@ import psutil
 import re
 import time
 
+import subprocess
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import requests
+import psutil
+import re
+import time
+import os
+import tkinter as tk
+from tkinter import messagebox
+
 # ========================
 # Paso 1: Capturar conexiones con netstat
 # ========================
@@ -48,14 +61,19 @@ def parse_netstat(lines):
                             process_name = psutil.Process(int(pid)).name()
                         except:
                             process_name = "Desconocido"
-                        connections.append({
-                            "Protocolo": protocolo,
-                            "IP Remota": ip,
-                            "Puerto Remoto": int(port),
-                            "Estado": estado,
-                            "PID": int(pid),
-                            "Proceso": process_name
-                        })
+                        try:
+                            port = int(port)
+                            pid = int(pid)
+                            connections.append({
+                                "Protocolo": protocolo,
+                                "IP Remota": ip,
+                                "Puerto Remoto": port,
+                                "Estado": estado,
+                                "PID": pid,
+                                "Proceso": process_name
+                            })
+                        except:
+                            continue
     return pd.DataFrame(connections)
 
 # ========================
@@ -81,29 +99,47 @@ def geolocalizar_ips(df):
                 }
         except:
             geo_data[ip] = {'País': 'N/A', 'Región': 'N/A', 'Ciudad': 'N/A', 'Org': 'N/A', 'Latitud': None, 'Longitud': None}
-        time.sleep(0.5)  # para evitar bloqueo por rate limit
+        time.sleep(0.5)  # evitar bloqueo por rate limit
 
     geo_df = pd.DataFrame.from_dict(geo_data, orient='index')
     geo_df.index.name = 'IP Remota'
     return df.join(geo_df, on='IP Remota')
 
 # ========================
-# Paso 4: Análisis estadístico y correlación
+# Paso 4: Mostrar estadísticas básicas
 # ========================
 
-def analizar(df):
-    print("📊 Estadísticas básicas:")
-    print("Media:", df['Puerto Remoto'].mean())
-    print("Mediana:", df['Puerto Remoto'].median())
-    print("Moda:", df['Puerto Remoto'].mode()[0])
-    print("Desviación estándar:", df['Puerto Remoto'].std())
+def mostrar_estadisticas(df):
+    media = df['Puerto Remoto'].mean()
+    mediana = df['Puerto Remoto'].median()
+    moda = df['Puerto Remoto'].mode()[0]
+    desviacion = df['Puerto Remoto'].std()
 
-    print("\n📌 Matriz de correlación:")
+    estadisticas = f"""
+    📊 Estadísticas del Puerto Remoto
+
+    Media: {media:.2f}
+    Mediana: {mediana:.2f}
+    Moda: {moda}
+    Desviación estándar: {desviacion:.2f}
+    """
+
+    root = tk.Tk()
+    root.withdraw()
+    messagebox.showinfo("🐾 Estadísticas Básicas", estadisticas)
+    root.destroy()
+
+# ========================
+# Paso 5: Mostrar correlación
+# ========================
+
+def mostrar_correlacion(df):
     df['ProtocoloNum'] = df['Protocolo'].map({'TCP': 1, 'UDP': 2})
     df['EstadoNum'] = df['Estado'].astype('category').cat.codes
     df['ProcesoID'] = df['Proceso'].astype('category').cat.codes
 
     correlacion = df[['Puerto Remoto', 'PID', 'ProtocoloNum', 'EstadoNum', 'ProcesoID']].corr()
+    print("\n📌 Matriz de correlación:")
     print(correlacion)
 
     sns.heatmap(correlacion, annot=True, cmap="coolwarm")
@@ -111,19 +147,31 @@ def analizar(df):
     plt.show()
 
 # ========================
-# Paso 5: Ejecutar todo y guardar
+# Paso 6: Abrir CSV automáticamente
+# ========================
+
+def abrir_csv(path):
+    print(f"📂 Abriendo el archivo: {path}")
+    os.startfile(path)
+
+# ========================
+# Paso 7: Ejecutar Todo
 # ========================
 
 def main():
     lines = get_netstat_output()
     df = parse_netstat(lines)
     if df.empty:
-        print("No se encontraron conexiones activas.")
+        print("😿 No se encontraron conexiones activas.")
         return
 
     df = geolocalizar_ips(df)
-    df.to_csv("conexiones_con_geolocalizacion.csv", index=False)
-    print("✅ Dataset guardado como 'conexiones_con_geolocalizacion.csv'")
-    analizar(df)
+    file_path = "conexiones_con_geolocalizacion.csv"
+    df.to_csv(file_path, index=False)
+    print(f"✅ Dataset guardado como '{file_path}'")
+
+    abrir_csv(file_path)
+    mostrar_estadisticas(df)
+    mostrar_correlacion(df)
 
 main()
