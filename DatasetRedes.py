@@ -151,7 +151,7 @@ def main():
     todas_las_conexiones.to_csv(file_path, index=False)
     print(f"✅ Dataset final guardado como '{file_path}'")
 
-    # Mostrar primero estadísticas y correlaciones, luego abrir el archivo
+    # Mostrar primero estadísticas y correlaciones, luego abrir el archivo.
     mostrar_estadisticas(todas_las_conexiones)
     mostrar_correlacion(todas_las_conexiones)
     abrir_csv(file_path)
