@@ -29,18 +29,23 @@ import os
 import tkinter as tk
 from tkinter import messagebox
 
-# ========================
-# Paso 1: Capturar conexiones con netstat
-# ========================
+import subprocess
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import requests
+import psutil
+import re
+import time
+import os
+import tkinter as tk
+from tkinter import messagebox
 
+# ========================
 def get_netstat_output():
-    print("⌛ Obteniendo conexiones activas (netstat)...")
     result = subprocess.run(["netstat", "-ano"], capture_output=True, text=True)
     return result.stdout.splitlines()
-
-# ========================
-# Paso 2: Parsear resultados
-# ========================
 
 def parse_netstat(lines):
     connections = []
@@ -56,7 +61,7 @@ def parse_netstat(lines):
 
                 if ":" in remote:
                     ip, port = remote.rsplit(":", 1)
-                    if ip != "0.0.0.0" and ip != "[::]":
+                    if ip not in ["0.0.0.0", "[::]", "::", ""]:
                         try:
                             process_name = psutil.Process(int(pid)).name()
                         except:
@@ -77,15 +82,15 @@ def parse_netstat(lines):
     return pd.DataFrame(connections)
 
 # ========================
-# Paso 3: Geolocalización IP (ip-api.com)
-# ========================
-
 def geolocalizar_ips(df):
-    print("🌍 Obteniendo geolocalización de IPs únicas...")
     unique_ips = df['IP Remota'].unique()
     geo_data = {}
 
     for ip in unique_ips:
+        if ip.startswith("127.") or ip in ["::1"]:
+            geo_data[ip] = {'País': 'LOCAL', 'Región': 'LOCAL', 'Ciudad': 'LOCAL', 'Org': 'LOCAL', 'Latitud': None, 'Longitud': None}
+            continue
+
         try:
             response = requests.get(f"http://ip-api.com/json/{ip}").json()
             if response['status'] == 'success':
@@ -97,25 +102,24 @@ def geolocalizar_ips(df):
                     'Latitud': response.get('lat', None),
                     'Longitud': response.get('lon', None)
                 }
+            else:
+                geo_data[ip] = {'País': 'N/A', 'Región': 'N/A', 'Ciudad': 'N/A', 'Org': 'N/A', 'Latitud': None, 'Longitud': None}
         except:
             geo_data[ip] = {'País': 'N/A', 'Región': 'N/A', 'Ciudad': 'N/A', 'Org': 'N/A', 'Latitud': None, 'Longitud': None}
-        time.sleep(0.5)  # evitar bloqueo por rate limit
+        time.sleep(0.5)
 
     geo_df = pd.DataFrame.from_dict(geo_data, orient='index')
     geo_df.index.name = 'IP Remota'
     return df.join(geo_df, on='IP Remota')
 
 # ========================
-# Paso 4: Mostrar estadísticas básicas
-# ========================
-
 def mostrar_estadisticas(df):
     media = df['Puerto Remoto'].mean()
     mediana = df['Puerto Remoto'].median()
     moda = df['Puerto Remoto'].mode()[0]
     desviacion = df['Puerto Remoto'].std()
 
-    estadisticas = f"""
+    texto = f"""
     📊 Estadísticas del Puerto Remoto
 
     Media: {media:.2f}
@@ -126,12 +130,8 @@ def mostrar_estadisticas(df):
 
     root = tk.Tk()
     root.withdraw()
-    messagebox.showinfo("🐾 Estadísticas Básicas", estadisticas)
+    messagebox.showinfo("🐾 Estadísticas Básicas", texto)
     root.destroy()
-
-# ========================
-# Paso 5: Mostrar correlación
-# ========================
 
 def mostrar_correlacion(df):
     df['ProtocoloNum'] = df['Protocolo'].map({'TCP': 1, 'UDP': 2})
@@ -146,32 +146,36 @@ def mostrar_correlacion(df):
     plt.title("💻 Matriz de correlación")
     plt.show()
 
-# ========================
-# Paso 6: Abrir CSV automáticamente
-# ========================
-
 def abrir_csv(path):
     print(f"📂 Abriendo el archivo: {path}")
     os.startfile(path)
 
 # ========================
-# Paso 7: Ejecutar Todo
-# ========================
-
 def main():
-    lines = get_netstat_output()
-    df = parse_netstat(lines)
-    if df.empty:
-        print("😿 No se encontraron conexiones activas.")
+    todas_las_conexiones = pd.DataFrame()
+
+    print("🐱 El monitoreo ha comenzado, presiona Ctrl + C para detenerlo... UwU")
+    try:
+        while True:
+            lines = get_netstat_output()
+            df = parse_netstat(lines)
+            if not df.empty:
+                df = geolocalizar_ips(df)
+                todas_las_conexiones = pd.concat([todas_las_conexiones, df], ignore_index=True)
+            time.sleep(5)  # puedes ajustar esto si quieres
+    except KeyboardInterrupt:
+        print("\n🚨 Ctrl + C detectado, terminando captura...")
+
+    if todas_las_conexiones.empty:
+        print("😿 No se recolectó ninguna conexión activa.")
         return
 
-    df = geolocalizar_ips(df)
-    file_path = "conexiones_con_geolocalizacion.csv"
-    df.to_csv(file_path, index=False)
-    print(f"✅ Dataset guardado como '{file_path}'")
+    file_path = "conexiones_monitorizadas.csv"
+    todas_las_conexiones.to_csv(file_path, index=False)
+    print(f"✅ Dataset final guardado como '{file_path}'")
 
     abrir_csv(file_path)
-    mostrar_estadisticas(df)
-    mostrar_correlacion(df)
+    mostrar_estadisticas(todas_las_conexiones)
+    mostrar_correlacion(todas_las_conexiones)
 
 main()
