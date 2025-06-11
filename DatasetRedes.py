@@ -148,7 +148,6 @@ def main():
         return
 
     file_path = "conexiones_monitorizadas.csv"
-    print("El CSV Se Encuentra En:", file_path)
     todas_las_conexiones.to_csv(file_path, index=False)
     print(f"✅ Dataset final guardado como '{file_path}'")
 
